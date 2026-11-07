@@ -1,41 +1,53 @@
 
-services:
+name: microservices-deployment
 
-  postgres:
-    image: postgres:16
-    container_name: address-postgres
+services:
+  postgresdb:
+    image: postgres:16-alpine
+    container_name: postgresdb
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: soa-skill-exam-2400031987
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: exam123
+      POSTGRES_DB: exam_2400031987
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d soa-skill-exam-2400031987"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d exam_2400031987"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+    networks:
+      - microservices-network
 
-  backend:
-    image: docker-skill-exam-2400031987:latest
-    container_name: address-backend
+  exam-service:
+    image: poojabagula/docker-skill-exam-2400031987:latest
     build:
       context: ./AddressRestAPI
       dockerfile: Dockerfile
-    depends_on:
-      postgres:
-        condition: service_healthy
+    container_name: exam-service
     ports:
       - "1987:2007"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/soa-skill-exam-2400031987
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresdb:5432/exam_2400031987
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: exam123
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SERVER_PORT: 2007
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - microservices-network
 
 volumes:
   postgres_data:
+
+networks:
+  microservices-network:
+    driver: bridge
