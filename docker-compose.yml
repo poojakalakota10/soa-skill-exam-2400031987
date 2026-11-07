@@ -1,0 +1,41 @@
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: address-postgres
+    environment:
+      POSTGRES_DB: soa-skill-exam-2400031987
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: exam123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d soa-skill-exam-2400031987"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: docker-skill-exam-2400031987:latest
+    container_name: address-backend
+    build:
+      context: ./AddressRestAPI
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "1987:2007"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/soa-skill-exam-2400031987
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: exam123
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SERVER_PORT: 2007
+
+volumes:
+  postgres_data:
